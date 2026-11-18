@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Informasi Booking Ruang Rapat</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Custom scrollbar untuk tabel */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-900">
+
+    <!-- Navbar / Header -->
+    <header class="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm border border-white/20">
+                        <i data-lucide="calendar-check-2" class="w-7 h-7 text-blue-200"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold tracking-tight">E-Rapat & Reservasi</h1>
+                        <p class="text-xs sm:text-sm text-blue-200">Sistem Penjadwalan & Peminjaman Ruang Rapat</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <!-- Indikator Status Sinkronisasi -->
+                    <div id="sync-status" class="flex items-center space-x-2 text-xs bg-white/10 px-3 py-2 rounded-xl border border-white/10">
+                        <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span id="sync-text" class="font-medium text-blue-100">Menghubungkan...</span>
+                    </div>
+                    <div id="user-status" class="hidden items-center gap-2 text-xs bg-white/10 px-3 py-2 rounded-xl border border-white/10">
+                        <i data-lucide="user-check" class="w-4 h-4 text-blue-200"></i>
+                        <span id="user-email" class="font-medium text-blue-100"></span>
+                    </div>
+                    <button id="signout-btn" class="hidden text-xs bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl border border-white/20">Keluar</button>
+                    <div class="flex items-center space-x-2 text-xs sm:text-sm bg-white/10 px-3.5 py-2 rounded-xl border border-white/10">
+                        <i data-lucide="clock" class="w-4 h-4 text-blue-300"></i>
+                        <span id="live-clock" class="font-medium tracking-wide">Memuat waktu...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+        <!-- Grid Utama: Form Booking & Daftar Jadwal -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Kolom Kiri: Form Pemesanan (5 Kolom) -->
+            <div class="lg:col-span-5">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden sticky top-24">
+                    <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex items-center gap-2.5">
+                        <div class="bg-blue-600 text-white p-1.5 rounded-lg">
+                            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800">Formulir Booking Ruang</h3>
+                    </div>
+
+                    <form id="booking-form" class="p-6 space-y-5">
+                        <!-- Pilih Bidang / UPTD -->
+                        <div>
+                            <label for="bidang" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Bidang / Unit Kerja <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <select id="bidang" required class="w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-3 pr-10 text-sm text-slate-700 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition-all">
+                                    <option value="" disabled selected>-- Pilih Bidang / Unit Kerja --</option>
+                                    <option value="Bidang Usaha Mikro">1. Bidang Usaha Mikro</option>
+                                    <option value="Bidang Usaha Non Formal">2. Bidang Usaha Non Formal</option>
+                                    <option value="Bidang Pemberdayaan">3. Bidang Pemberdayaan</option>
+                                    <option value="Bidang Pengawasan">4. Bidang Pengawasan</option>
+                                    <option value="UPTD Balatkop dan UKM">5. UPTD Balatkop dan UKM</option>
+                                    <option value="Sekretariat">6. Sekretariat</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <!-- Pilih Ruangan -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">
+                                Pilih Ruang Rapat <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="ruangan" value="Ruang Rapat KCR" class="peer sr-only" required checked>
+                                    <div class="rounded-xl border-2 border-slate-200 p-3.5 hover:bg-slate-50 peer-checked:border-blue-600 peer-checked:bg-blue-50/50 transition-all">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-semibold text-sm text-slate-800">Ruang Rapat KCR</span>
+                                            <i data-lucide="check-circle-2" class="w-4 h-4 text-blue-600 opacity-0 peer-checked:opacity-100"></i>
+                                        </div>
+                                        <p class="text-xs text-slate-500 mt-1">Lantai Dasar / Utama</p>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="ruangan" value="Ruang Rapat LT. 2" class="peer sr-only" required>
+                                    <div class="rounded-xl border-2 border-slate-200 p-3.5 hover:bg-slate-50 peer-checked:border-indigo-600 peer-checked:bg-indigo-50/50 transition-all">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-semibold text-sm text-slate-800">Ruang Rapat LT. 2</span>
+                                            <i data-lucide="check-circle-2" class="w-4 h-4 text-indigo-600 opacity-0 peer-checked:opacity-100"></i>
+                                        </div>
+                                        <p class="text-xs text-slate-500 mt-1">Lantai 2 Gedung Utama</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Nama Kegiatan -->
+                        <div>
+                            <label for="nama-kegiatan" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Nama Kegiatan <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="nama-kegiatan" required placeholder="Contoh: Rapat Koordinasi & Evaluasi Program" 
+                                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition-all">
+                        </div>
+
+                        <!-- Tanggal Kegiatan -->
+                        <div>
+                            <label for="tanggal-kegiatan" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Tanggal Kegiatan <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="date" id="tanggal-kegiatan" required 
+                                    class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-700 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition-all">
+                            </div>
+                        </div>
+
+                        <!-- Waktu Kegiatan (Mulai & Selesai) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Waktu Kegiatan <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="waktu-mulai" class="block text-xs text-slate-500 mb-1">Jam Mulai</label>
+                                    <input type="time" id="waktu-mulai" required value="09:00"
+                                        class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-700 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition-all">
+                                </div>
+                                <div>
+                                    <label for="waktu-selesai" class="block text-xs text-slate-500 mb-1">Jam Selesai</label>
+                                    <input type="time" id="waktu-selesai" required value="11:00"
+                                        class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-700 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition-all">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pesan Error Validasi Jadwal Bentrok -->
+                        <div id="conflict-alert" class="hidden rounded-xl bg-red-50 border border-red-200 p-3.5 text-xs text-red-700 flex items-start gap-2.5">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600 shrink-0 mt-0.5"></i>
+                            <div>
+                                <p class="font-bold">Jadwal Bentrok!</p>
+                                <p id="conflict-message" class="mt-0.5">Ruangan sudah dipesan pada jam tersebut.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tombol Submit -->
+                        <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 px-4 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+                            <span id="submit-btn-text">Simpan Jadwal Booking</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Daftar Jadwal Booking (7 Kolom) -->
+            <div class="lg:col-span-7">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    
+                    <!-- Header Tabel & Filter -->
+                    <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-2.5">
+                            <div class="bg-indigo-600 text-white p-1.5 rounded-lg">
+                                <i data-lucide="list-ordered" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-800">Daftar Jadwal Penggunaan Ruang</h3>
+                                <p class="text-xs text-slate-500">Menampilkan seluruh agenda rapat yang terjadwal</p>
+                            </div>
+                        </div>
+
+                        <!-- Filter Ruangan -->
+                        <div class="flex items-center gap-2">
+                            <select id="filter-ruangan" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-blue-600 focus:outline-none">
+                                <option value="ALL">Semua Ruangan</option>
+                                <option value="Ruang Rapat KCR">Ruang Rapat KCR</option>
+                                <option value="Ruang Rapat LT. 2">Ruang Rapat LT. 2</option>
+                            </select>
+                            <input type="date" id="filter-tanggal" title="Filter berdasarkan tanggal" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-blue-600 focus:outline-none">
+                            <button id="reset-filter" title="Reset Filter" class="p-2 rounded-xl border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 transition-colors">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Daftar Card / Tabel Jadwal -->
+                    <div id="booking-list" class="divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
+                        <!-- Loading state awal -->
+                        <div id="loading-state" class="py-16 px-6 text-center">
+                            <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
+                            <p class="text-sm font-medium text-slate-600">Memuat jadwal rapat bersama...</p>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="hidden py-16 px-6 text-center">
+                        <div class="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                            <i data-lucide="calendar-off" class="w-8 h-8"></i>
+                        </div>
+                        <h4 class="text-base font-bold text-slate-700">Belum Ada Jadwal Rapat</h4>
+                        <p class="text-sm text-slate-500 max-w-sm mx-auto mt-1">Tidak ditemukan jadwal booking ruangan untuk filter yang dipilih. Silakan buat reservasi baru melalui formulir di samping.</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Custom Modal Konfirmasi Hapus -->
+    <div id="delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center gap-3 text-red-600 mb-3">
+                <div class="bg-red-100 p-2 rounded-full">
+                    <i data-lucide="trash-2" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Batalkan Reservasi?</h3>
+            </div>
+            <p class="text-sm text-slate-600 mb-6">
+                Apakah Anda yakin ingin menghapus jadwal kegiatan <span id="modal-kegiatan-name" class="font-semibold text-slate-800"></span>? Perubahan ini akan langsung terlihat oleh semua staf.
+            </p>
+            <div class="flex justify-end gap-3">
+                <button id="cancel-delete-btn" class="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                    Batal
+                </button>
+                <button id="confirm-delete-btn" class="px-4 py-2.5 rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-700 transition-colors">
+                    Ya, Hapus Jadwal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // GANTI nilai di bawah dengan firebaseConfig dari Firebase Console > Project settings > Your apps.
+        const firebaseConfig = {
+            apiKey: "ISI_API_KEY",
+            authDomain: "ISI_PROJECT_ID.firebaseapp.com",
+            projectId: "ISI_PROJECT_ID",
+            storageBucket: "ISI_STORAGE_BUCKET",
+            messagingSenderId: "ISI_MESSAGING_SENDER_ID",
+            appId: "ISI_APP_ID"
+        };
+
+        lucide.createIcons();
+        const configReady = firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('ISI_') && firebaseConfig.projectId && !firebaseConfig.projectId.startsWith('ISI_');
+        const authGate = document.getElementById('auth-gate');
+        const appMain = document.getElementById('app-main');
+        const authMessage = document.getElementById('auth-message');
+        const loginBtn = document.getElementById('google-login-btn');
+        const signoutBtn = document.getElementById('signout-btn');
+        const userStatus = document.getElementById('user-status');
+        const userEmailEl = document.getElementById('user-email');
+        const pendingUidWrap = document.getElementById('pending-uid-wrap');
+        const pendingUid = document.getElementById('pending-uid');
+        const form = document.getElementById('booking-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const submitBtnText = document.getElementById('submit-btn-text');
+        const tanggalInput = document.getElementById('tanggal-kegiatan');
+        const bookingListEl = document.getElementById('booking-list');
+        const loadingStateEl = document.getElementById('loading-state');
+        const emptyStateEl = document.getElementById('empty-state');
+        const conflictAlert = document.getElementById('conflict-alert');
+        const conflictMessage = document.getElementById('conflict-message');
+        const filterRuangan = document.getElementById('filter-ruangan');
+        const filterTanggal = document.getElementById('filter-tanggal');
+        const resetFilterBtn = document.getElementById('reset-filter');
+        const syncDot = document.getElementById('sync-dot');
+        const syncText = document.getElementById('sync-text');
+        const deleteModal = document.getElementById('delete-modal');
+        const modalKegiatanName = document.getElementById('modal-kegiatan-name');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+        const bidangColors = {
+            'Bidang Usaha Mikro': 'bg-blue-100 text-blue-800 border-blue-200',
+            'Bidang Usaha Non Formal': 'bg-teal-100 text-teal-800 border-teal-200',
+            'Bidang Pemberdayaan': 'bg-amber-100 text-amber-800 border-amber-200',
+            'Bidang Pengawasan': 'bg-rose-100 text-rose-800 border-rose-200',
+            'UPTD Balatkop dan UKM': 'bg-purple-100 text-purple-800 border-purple-200',
+            'Sekretariat': 'bg-slate-200 text-slate-800 border-slate-300'
+        };
+        let app, auth, db, currentUser = null, currentProfile = null;
+        let bookings = [], unsubscribeBookings = null, bookingToDeleteId = null;
+
+        function localDateString(date = new Date()) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+        tanggalInput.value = localDateString();
+        function escapeHtml(value='') {
+            return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        }
+        function showMessage(message, type='warning') {
+            authMessage.textContent = message;
+            authMessage.className = `mt-5 rounded-xl border p-4 text-left text-sm ${type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-900'}`;
+            authMessage.classList.remove('hidden');
+        }
+        function hideMessage() { authMessage.classList.add('hidden'); }
+        function setSyncStatus(type, label) {
+            syncText.textContent = label;
+            syncDot.className = type === 'connected' ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        }
+        function showToast(title, message, type='success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const ok = type === 'success';
+            toast.className = `pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border ${ok ? 'bg-slate-900 text-white border-slate-700' : 'bg-red-600 text-white border-red-700'}`;
+            toast.innerHTML = `<div class="text-sm"><p class="font-bold">${escapeHtml(title)}</p><p class="text-xs opacity-90 mt-0.5">${escapeHtml(message)}</p></div>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+        function formatTanggalID(dateString) {
+            return new Date(dateString + 'T00:00:00').toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+        }
+        function checkConflict(room, date, start, end) {
+            return bookings.find(b => b.ruangan === room && b.tanggal === date && start < b.waktuSelesai && end > b.waktuMulai);
+        }
+        function canCancel(item) {
+            return currentUser && (currentProfile?.role === 'admin' || item.createdBy === currentUser.uid);
+        }
+        function renderBookings() {
+            if (loadingStateEl) loadingStateEl.classList.add('hidden');
+            document.getElementById('count-kcr').textContent = bookings.filter(b => b.ruangan === 'Ruang Rapat KCR').length;
+            document.getElementById('count-lt2').textContent = bookings.filter(b => b.ruangan === 'Ruang Rapat LT. 2').length;
+            const selectedRoom = filterRuangan.value;
+            const selectedDate = filterTanggal.value;
+            const filtered = bookings.filter(b => (selectedRoom === 'ALL' || b.ruangan === selectedRoom) && (!selectedDate || b.tanggal === selectedDate))
+                .sort((a,b) => a.tanggal.localeCompare(b.tanggal) || a.waktuMulai.localeCompare(b.waktuMulai));
+            bookingListEl.innerHTML = '';
+            if (!filtered.length) { emptyStateEl.classList.remove('hidden'); return; }
+            emptyStateEl.classList.add('hidden');
+            filtered.forEach(item => {
+                const badgeStyle = bidangColors[item.bidang] || 'bg-slate-100 text-slate-800 border-slate-200';
+                const isKCR = item.ruangan === 'Ruang Rapat KCR';
+                const roomBadge = isKCR ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                const card = document.createElement('div');
+                card.className = 'p-5 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group';
+                card.innerHTML = `
+                    <div class="space-y-2 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border ${roomBadge}">${escapeHtml(item.ruangan)}</span>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border ${badgeStyle}">${escapeHtml(item.bidang)}</span>
+                        </div>
+                        <h4 class="text-base font-bold text-slate-800 leading-snug">${escapeHtml(item.namaKegiatan)}</h4>
+                        <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs font-medium text-slate-500">
+                            <span>${escapeHtml(formatTanggalID(item.tanggal))}</span>
+                            <span class="text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md">${escapeHtml(item.waktuMulai)} – ${escapeHtml(item.waktuSelesai)} WIB</span>
+                            <span>Pemesan: ${escapeHtml(item.createdByName || item.createdByEmail || 'Pegawai')}</span>
+                        </div>
+                    </div>
+                    ${canCancel(item) ? `<div class="flex items-center justify-end"><button data-delete-id="${escapeHtml(item.id)}" class="delete-booking-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200/60">Batalkan</button></div>` : ''}`;
+                bookingListEl.appendChild(card);
+            });
+            bookingListEl.querySelectorAll('.delete-booking-btn').forEach(btn => btn.addEventListener('click', () => openDeleteModal(btn.dataset.deleteId)));
+        }
+        function showLoginGate() {
+            authGate.classList.remove('hidden'); appMain.classList.add('hidden');
+            userStatus.classList.add('hidden'); signoutBtn.classList.add('hidden');
+        }
+        function showApp() {
+            authGate.classList.add('hidden'); appMain.classList.remove('hidden');
+            userStatus.classList.remove('hidden'); userStatus.classList.add('flex');
+            signoutBtn.classList.remove('hidden');
+            userEmailEl.textContent = currentUser.email || currentUser.displayName || 'Pegawai';
+        }
+        async function startBookingsListener() {
+            if (unsubscribeBookings) unsubscribeBookings();
+            setSyncStatus('connecting', 'Menghubungkan database...');
+            unsubscribeBookings = onSnapshot(collection(db, 'erapat_bookings'), snapshot => {
+                bookings = snapshot.docs.map(d => ({id:d.id, ...d.data()}));
+                setSyncStatus('connected', 'Tersinkronisasi');
+                renderBookings();
+            }, error => {
+                console.error(error); setSyncStatus('error', 'Akses database gagal');
+                showToast('Akses database ditolak', 'Periksa status akun dan Firestore Security Rules.', 'error');
+            });
+        }
+        async function handleUser(user) {
+            currentUser = user;
+            currentProfile = null;
+            if (!user) {
+                if (unsubscribeBookings) unsubscribeBookings();
+                bookings = []; renderBookings(); showLoginGate(); return;
+            }
+            userStatus.classList.remove('hidden'); userStatus.classList.add('flex');
+            signoutBtn.classList.remove('hidden');
+            userEmailEl.textContent = user.email || 'Akun Google';
+            pendingUid.textContent = user.uid; pendingUidWrap.classList.remove('hidden');
+            try {
+                const profileRef = doc(db, 'users', user.uid);
+                let profileSnap = await getDoc(profileRef);
+                if (!profileSnap.exists()) {
+                    await setDoc(profileRef, {
+                        uid: user.uid,
+                        email: user.email || '',
+                        displayName: user.displayName || '',
+                        role: 'pegawai',
+                        status: 'pending',
+                        active: false,
+                        createdAt: serverTimestamp()
+                    });
+                    profileSnap = await getDoc(profileRef);
+                }
+                currentProfile = profileSnap.data();
+                if (currentProfile.active !== true || currentProfile.status !== 'active') {
+                    showLoginGate();
+                    showMessage('Akun Google Anda sudah teridentifikasi, tetapi belum diaktifkan oleh administrator. Sampaikan email dan UID akun kepada admin DiskopUKM untuk persetujuan akses.');
+                    pendingUidWrap.classList.remove('hidden');
+                    return;
+                }
+                hideMessage(); pendingUidWrap.classList.add('hidden'); showApp();
+                await startBookingsListener();
+            } catch (error) {
+                console.error(error); showLoginGate();
+                showMessage('Tidak dapat memeriksa hak akses. Pastikan Firestore Rules sudah dipasang dan akun Anda telah disetujui. Kode: ' + (error.code || 'unknown'), 'error');
+            }
+        }
+
+        loginBtn.addEventListener('click', async () => {
+            if (!configReady) { showMessage('Konfigurasi Firebase belum diisi. Ikuti petunjuk pada file PANDUAN-PASANG.txt.', 'error'); return; }
+            try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+            catch (error) { console.error(error); showMessage('Login Google gagal: ' + (error.message || error.code), 'error'); }
+        });
+        signoutBtn.addEventListener('click', async () => { if (auth) await signOut(auth); });
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!currentUser || currentProfile?.active !== true) { showToast('Akses belum aktif', 'Silakan login dengan akun pegawai yang telah disetujui.', 'error'); return; }
+            conflictAlert.classList.add('hidden');
+            const bidang = document.getElementById('bidang').value;
+            const ruangan = document.querySelector('input[name="ruangan"]:checked').value;
+            const namaKegiatan = document.getElementById('nama-kegiatan').value.trim();
+            const tanggal = tanggalInput.value;
+            const waktuMulai = document.getElementById('waktu-mulai').value;
+            const waktuSelesai = document.getElementById('waktu-selesai').value;
+            if (!namaKegiatan || !tanggal || tanggal < localDateString()) {
+                conflictMessage.textContent = 'Lengkapi nama kegiatan dan pilih tanggal hari ini atau tanggal mendatang.';
+                conflictAlert.classList.remove('hidden'); return;
+            }
+            if (waktuMulai >= waktuSelesai) {
+                conflictMessage.textContent = 'Jam selesai kegiatan harus lebih akhir daripada jam mulai.';
+                conflictAlert.classList.remove('hidden'); return;
+            }
+            const conflict = checkConflict(ruangan, tanggal, waktuMulai, waktuSelesai);
+            if (conflict) {
+                conflictMessage.textContent = `${ruangan} sudah dipesan untuk kegiatan ${conflict.namaKegiatan} pada pukul ${conflict.waktuMulai} - ${conflict.waktuSelesai} WIB.`;
+                conflictAlert.classList.remove('hidden'); showToast('Gagal memesan', 'Jadwal ruangan bentrok.', 'error'); return;
+            }
+            submitBtn.disabled = true; submitBtnText.textContent = 'Menyimpan Jadwal...';
+            try {
+                await addDoc(collection(db, 'erapat_bookings'), {
+                    bidang, ruangan, namaKegiatan, tanggal, waktuMulai, waktuSelesai,
+                    createdAt: serverTimestamp(), createdBy: currentUser.uid,
+                    createdByEmail: currentUser.email || '', createdByName: currentUser.displayName || ''
+                });
+                document.getElementById('nama-kegiatan').value = '';
+                showToast('Booking tersimpan', `${ruangan} berhasil diajukan dan tersinkron ke pengguna yang berhak.`);
+            } catch (error) {
+                console.error(error); showToast('Gagal menyimpan', 'Periksa koneksi, status persetujuan, dan aturan Firestore.', 'error');
+            } finally { submitBtn.disabled = false; submitBtnText.textContent = 'Simpan Jadwal Booking'; }
+        });
+
+        filterRuangan.addEventListener('change', renderBookings);
+        filterTanggal.addEventListener('change', renderBookings);
+        resetFilterBtn.addEventListener('click', () => { filterRuangan.value = 'ALL'; filterTanggal.value = ''; renderBookings(); });
+        function openDeleteModal(id) {
+            const target = bookings.find(b => b.id === id);
+            if (!target || !canCancel(target)) return;
+            bookingToDeleteId = id;
+            modalKegiatanName.textContent = `"${target.namaKegiatan}" (${target.ruangan})`;
+            deleteModal.classList.remove('hidden'); deleteModal.classList.add('flex');
+        }
+        function closeDeleteModal() { bookingToDeleteId = null; deleteModal.classList.add('hidden'); deleteModal.classList.remove('flex'); }
+        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+        deleteModal.addEventListener('click', e => { if (e.target === deleteModal) closeDeleteModal(); });
+        confirmDeleteBtn.addEventListener('click', async () => {
+            const id = bookingToDeleteId; closeDeleteModal(); if (!id) return;
+            try { await deleteDoc(doc(db, 'erapat_bookings', id)); showToast('Reservasi dibatalkan', 'Perubahan tersinkron ke pengguna yang berhak.'); }
+            catch (error) { console.error(error); showToast('Gagal membatalkan', 'Anda tidak memiliki hak untuk membatalkan jadwal ini.', 'error'); }
+        });
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-clock').textContent = now.toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Jakarta'}) + ' WIB';
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        if (!configReady) {
+            showLoginGate();
+            showMessage('Konfigurasi Firebase belum diisi. Lengkapi objek firebaseConfig di bagian awal script sebelum mengunggah aplikasi.', 'error');
+            loginBtn.disabled = true; loginBtn.classList.add('opacity-50','cursor-not-allowed');
+        } else {
+            try {
+                app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
+                onAuthStateChanged(auth, handleUser);
+            } catch (error) {
+                console.error(error); showLoginGate(); showMessage('Inisialisasi Firebase gagal. Periksa kembali firebaseConfig.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
